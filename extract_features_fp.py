@@ -57,72 +57,72 @@ def compute_w_loader(file_path, output_path, wsi, model,
 	return output_path
 
 
-parser = argparse.ArgumentParser(description='Feature Extraction')
-parser.add_argument('--data_h5_dir', type=str, default=None)
-parser.add_argument('--data_slide_dir', type=str, default=None)
-parser.add_argument('--slide_ext', type=str, default= '.svs')
-parser.add_argument('--csv_path', type=str, default=None)
-parser.add_argument('--feat_dir', type=str, default=None)
-parser.add_argument('--batch_size', type=int, default=256)
-parser.add_argument('--no_auto_skip', default=False, action='store_true')
-parser.add_argument('--custom_downsample', type=int, default=1)
-parser.add_argument('--target_patch_size', type=int, default=-1)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(description='Feature Extraction')
+# parser.add_argument('--data_h5_dir', type=str, default=None)
+# parser.add_argument('--data_slide_dir', type=str, default=None)
+# parser.add_argument('--slide_ext', type=str, default= '.svs')
+# parser.add_argument('--csv_path', type=str, default=None)
+# parser.add_argument('--feat_dir', type=str, default=None)
+# parser.add_argument('--batch_size', type=int, default=256)
+# parser.add_argument('--no_auto_skip', default=False, action='store_true')
+# parser.add_argument('--custom_downsample', type=int, default=1)
+# parser.add_argument('--target_patch_size', type=int, default=-1)
+# args = parser.parse_args()
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-	print('initializing dataset')
-	csv_path = args.csv_path
-	if csv_path is None:
-		raise NotImplementedError
+# 	print('initializing dataset')
+# 	csv_path = args.csv_path
+# 	if csv_path is None:
+# 		raise NotImplementedError
 
-	bags_dataset = Dataset_All_Bags(csv_path)
+# 	bags_dataset = Dataset_All_Bags(csv_path)
 	
-	os.makedirs(args.feat_dir, exist_ok=True)
-	os.makedirs(os.path.join(args.feat_dir, 'pt_files'), exist_ok=True)
-	os.makedirs(os.path.join(args.feat_dir, 'h5_files'), exist_ok=True)
-	dest_files = os.listdir(os.path.join(args.feat_dir, 'pt_files'))
+# 	os.makedirs(args.feat_dir, exist_ok=True)
+# 	os.makedirs(os.path.join(args.feat_dir, 'pt_files'), exist_ok=True)
+# 	os.makedirs(os.path.join(args.feat_dir, 'h5_files'), exist_ok=True)
+# 	dest_files = os.listdir(os.path.join(args.feat_dir, 'pt_files'))
 
-	print('loading model checkpoint')
-	model = resnet50_baseline(pretrained=True)
-	model = model.to(device)
+# 	print('loading model checkpoint')
+# 	model = resnet50_baseline(pretrained=True)
+# 	model = model.to(device)
 	
-	# print_network(model)
-	if torch.cuda.device_count() > 1:
-		model = nn.DataParallel(model)
+# 	# print_network(model)
+# 	if torch.cuda.device_count() > 1:
+# 		model = nn.DataParallel(model)
 		
-	model.eval()
-	total = len(bags_dataset)
+# 	model.eval()
+# 	total = len(bags_dataset)
 
-	for bag_candidate_idx in range(total):
-		slide_id = bags_dataset[bag_candidate_idx].split(args.slide_ext)[0]
-		bag_name = slide_id+'.h5'
-		h5_file_path = os.path.join(args.data_h5_dir, 'patches', bag_name)
-		slide_file_path = os.path.join(args.data_slide_dir, slide_id+args.slide_ext)
-		print('\nprogress: {}/{}'.format(bag_candidate_idx, total))
-		print(slide_id)
+# 	for bag_candidate_idx in range(total):
+# 		slide_id = bags_dataset[bag_candidate_idx].split(args.slide_ext)[0]
+# 		bag_name = slide_id+'.h5'
+# 		h5_file_path = os.path.join(args.data_h5_dir, 'patches', bag_name)
+# 		slide_file_path = os.path.join(args.data_slide_dir, slide_id+args.slide_ext)
+# 		print('\nprogress: {}/{}'.format(bag_candidate_idx, total))
+# 		print(slide_id)
 
-		if not args.no_auto_skip and slide_id+'.pt' in dest_files:
-			print('skipped {}'.format(slide_id))
-			continue 
+# 		if not args.no_auto_skip and slide_id+'.pt' in dest_files:
+# 			print('skipped {}'.format(slide_id))
+# 			continue 
 
-		output_path = os.path.join(args.feat_dir, 'h5_files', bag_name)
-		time_start = time.time()
-		wsi = openslide.open_slide(slide_file_path)
-		output_file_path = compute_w_loader(h5_file_path, output_path, wsi, 
-		model = model, batch_size = args.batch_size, verbose = 1, print_every = 20, 
-		custom_downsample=args.custom_downsample, target_patch_size=args.target_patch_size)
-		time_elapsed = time.time() - time_start
-		print('\ncomputing features for {} took {} s'.format(output_file_path, time_elapsed))
-		file = h5py.File(output_file_path, "r")
+# 		output_path = os.path.join(args.feat_dir, 'h5_files', bag_name)
+# 		time_start = time.time()
+# 		wsi = openslide.open_slide(slide_file_path)
+# 		output_file_path = compute_w_loader(h5_file_path, output_path, wsi, 
+# 		model = model, batch_size = args.batch_size, verbose = 1, print_every = 20, 
+# 		custom_downsample=args.custom_downsample, target_patch_size=args.target_patch_size)
+# 		time_elapsed = time.time() - time_start
+# 		print('\ncomputing features for {} took {} s'.format(output_file_path, time_elapsed))
+# 		file = h5py.File(output_file_path, "r")
 
-		features = file['features'][:]
-		print('features size: ', features.shape)
-		print('coordinates size: ', file['coords'].shape)
-		features = torch.from_numpy(features)
-		bag_base, _ = os.path.splitext(bag_name)
-		torch.save(features, os.path.join(args.feat_dir, 'pt_files', bag_base+'.pt'))
+# 		features = file['features'][:]
+# 		print('features size: ', features.shape)
+# 		print('coordinates size: ', file['coords'].shape)
+# 		features = torch.from_numpy(features)
+# 		bag_base, _ = os.path.splitext(bag_name)
+# 		torch.save(features, os.path.join(args.feat_dir, 'pt_files', bag_base+'.pt'))
 
 
 
