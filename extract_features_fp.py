@@ -6,8 +6,8 @@ import random
 import numpy as np
 import pdb
 import time
-from datasets.dataset_h5 import Dataset_All_Bags, Whole_Slide_Bag_FP
-from torch.utils.data import DataLoader
+# from datasets.dataset_h5 import Dataset_All_Bags, Whole_Slide_Bag_FP
+# from torch.utils.data import DataLoader
 from models.resnet_custom import resnet50_baseline
 import argparse
 from utils.utils import print_network, collate_features
